@@ -48,17 +48,12 @@ public class CategoryController : ControllerBase
     [HttpPost]
     public IResult Post(CategoryRequest request)
     {
-        var category = new Category
-        {
-            Name = request.Name,
-            CreatedBy = "Test",
-            CreatedOn = DateTime.UtcNow,
-            EditedBy = "Test",
-            EditedOn = DateTime.UtcNow
-        };
+        var category = new Category(request.Name, "Test User", "Test User");
+        if (!category.IsValid)
+            return Results.ValidationProblem(category.Notifications.ConvertToProblemDetails());
         Context.Categories.Add(category);
         Context.SaveChanges();
-        return Results.Created($"/categories/{category.Id}", category.Id);   
+        return Results.Created($"/category/{category.Id}", category.Id);   
     }
 
 
@@ -67,8 +62,9 @@ public class CategoryController : ControllerBase
     {
         var category = Context.Categories.Where(c => c.Id == id).FirstOrDefault();
         if (category == null) return Results.NotFound();
-        category.Name = request.Name;
-        category.Active = request.Active;
+        category.EditInfo(request.Name, request.Active);
+        if (!category.IsValid)
+            return Results.ValidationProblem(category.Notifications.ConvertToProblemDetails());
         Context.SaveChanges();
         return Results.Ok();
     }

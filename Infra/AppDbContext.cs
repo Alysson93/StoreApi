@@ -1,3 +1,4 @@
+using Flunt.Notifications;
 using Microsoft.EntityFrameworkCore;
 
 public class AppDbContext : DbContext
@@ -16,6 +17,8 @@ public class AppDbContext : DbContext
 
 	protected override void OnModelCreating(ModelBuilder builder)
 	{
+
+		builder.Ignore<Notification>();
 
 		builder.Entity<Product>().Property(p => p.Name).IsRequired();
 		builder.Entity<Product>().Property(p => p.Description).HasMaxLength(255);
