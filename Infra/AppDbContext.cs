@@ -1,7 +1,9 @@
 using Flunt.Notifications;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
-public class AppDbContext : DbContext
+public class AppDbContext : IdentityDbContext<IdentityUser>
 {
 
 
@@ -17,6 +19,8 @@ public class AppDbContext : DbContext
 
 	protected override void OnModelCreating(ModelBuilder builder)
 	{
+
+		base.OnModelCreating(builder);
 
 		builder.Ignore<Notification>();
 
