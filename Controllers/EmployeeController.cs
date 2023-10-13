@@ -59,13 +59,14 @@ public class EmployeeController : ControllerBase
         if (!result.Succeeded)
             return Results.BadRequest(result.Errors.First());
         
-        var claimResult = this.userManager.AddClaimAsync(user, new Claim("Code", request.Code)).Result;
+        var userClaims = new List<Claim>
+        {
+            new Claim("Code", request.Code),
+            new Claim("Name", request.Name)
+        };
+        var claimResult = userManager.AddClaimsAsync(user, userClaims).Result;     
         if (!claimResult.Succeeded)
-            return Results.BadRequest(result.Errors.First());
-
-        claimResult = this.userManager.AddClaimAsync(user, new Claim("Name", request.Name)).Result;
-        if (!claimResult.Succeeded)
-            return Results.BadRequest(result.Errors.First());        
+            return Results.BadRequest(claimResult.Errors.First());
 
         return Results.Created($"/employee/{user.Id}", user.Id);   
     }
