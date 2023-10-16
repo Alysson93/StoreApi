@@ -66,7 +66,7 @@ public class EmployeeController : ControllerBase
         };
         var claimResult = userManager.AddClaimsAsync(user, userClaims).Result;     
         if (!claimResult.Succeeded)
-            return Results.BadRequest(claimResult.Errors.First());
+            return Results.ValidationProblem(result.Errors.ConvertToProblemDetails());
 
         return Results.Created($"/employee/{user.Id}", user.Id);   
     }
