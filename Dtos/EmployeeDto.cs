@@ -5,3 +5,10 @@ public record EmployeeRequest
 	string Name,
 	string Code
 );
+
+
+public record EmployeeResponse
+(
+	string Email,
+	string Name
+);

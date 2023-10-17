@@ -18,18 +18,20 @@ public class EmployeeController : ControllerBase
         this.userManager = userManager;
     }
 
-    // [HttpGet]
-    // public IResult Get()
-    // {
-    //     var categories = Context.Categories.ToList();
-    //     var response = categories.Select(c => new CategoryResponse
-    //     {
-    //         Id = c.Id,
-    //         Name = c.Name,
-    //         Active = c.Active
-    //     });
-    //     return Results.Ok(response);
-    // }
+    [HttpGet]
+    public IResult Get()
+    {
+        var users = this.userManager.Users.ToList();
+        var employees = new List<EmployeeResponse>();
+        foreach(var item in users)
+        {
+            var claims = this.userManager.GetClaimsAsync(item).Result;
+            var claimName = claims.FirstOrDefault(c => c.Type == "Name");
+            var userName = claimName != null ? claimName.Value : string.Empty;
+            employees.Add(new EmployeeResponse(item.Email, userName));
+        }
+        return Results.Ok(employees);
+    }
 
 
     // [HttpGet("{id}")]
