@@ -1,5 +1,7 @@
+using Dapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
+using Npgsql;
 using System.Security.Claims;
 
 namespace StoreApi.Controllers;
@@ -11,46 +13,36 @@ public class EmployeeController : ControllerBase
 
     private readonly ILogger<EmployeeController> _logger;
     private readonly UserManager<IdentityUser> userManager;
+    private readonly IConfiguration configuration;
 
-    public EmployeeController(ILogger<EmployeeController> logger, UserManager<IdentityUser> userManager)
+
+    public EmployeeController(ILogger<EmployeeController> logger, UserManager<IdentityUser> userManager, IConfiguration configuration)
     {
         _logger = logger;
         this.userManager = userManager;
+        this.configuration = configuration;
     }
 
     [HttpGet]
-    public IResult Get()
+    public IResult Get([FromQuery]int page, [FromQuery]int rows)
     {
-        var users = this.userManager.Users.ToList();
-        var employees = new List<EmployeeResponse>();
-        foreach(var item in users)
-        {
-            var claims = this.userManager.GetClaimsAsync(item).Result;
-            var claimName = claims.FirstOrDefault(c => c.Type == "Name");
-            var userName = claimName != null ? claimName.Value : string.Empty;
-            employees.Add(new EmployeeResponse(item.Email, userName));
-        }
+        var db = new NpgsqlConnection(this.configuration["ConnectionString"]);
+        var query =  @"SELECT ""Email"", ""ClaimValue"" as Name
+            FROM public.""AspNetUsers"" u 
+            INNER JOIN public.""AspNetUserClaims"" c
+            ON u.""Id"" = c.""UserId"" AND ""ClaimType"" = 'Name'
+            ORDER BY ""name""
+            OFFSET @page ROWS
+            FETCH NEXT @rows ROWS ONLY;";
+        var employees = db.Query<EmployeeResponse>( 
+           query, new {page = (page-1)*rows, rows}
+        );
         return Results.Ok(employees);
     }
 
 
-    // [HttpGet("{id}")]
-    // public IResult GetById([FromRoute] Guid id)
-    // {
-    //     var category = Context.Categories.Where(c => c.Id == id).FirstOrDefault();
-    //     if (category == null) return Results.NotFound();
-    //     var response = new CategoryResponse
-    //     {
-    //         Id = category.Id,
-    //         Name = category.Name,
-    //         Active = category.Active
-    //     };
-    //     return Results.Ok(response);
-    // }
-
-
     [HttpPost]
-    public IResult Post(EmployeeRequest request)
+    public IResult Post([FromBody]EmployeeRequest request)
     {
         var user = new IdentityUser
         {
@@ -72,30 +64,5 @@ public class EmployeeController : ControllerBase
 
         return Results.Created($"/employee/{user.Id}", user.Id);   
     }
-
-
-    // [HttpPut("{id}")]
-    // public IResult Put(CategoryRequest request, [FromRoute] Guid id)
-    // {
-    //     var category = Context.Categories.Where(c => c.Id == id).FirstOrDefault();
-    //     if (category == null) return Results.NotFound();
-    //     category.EditInfo(request.Name, request.Active);
-    //     if (!category.IsValid)
-    //         return Results.ValidationProblem(category.Notifications.ConvertToProblemDetails());
-    //     Context.SaveChanges();
-    //     return Results.Ok();
-    // }
-
-
-    // [HttpDelete("{id}")]
-    // public IResult Delete([FromRoute] Guid id)
-    // {
-    //     var category = Context.Categories.Where(c => c.Id == id).FirstOrDefault();
-    //     if (category == null) return Results.NotFound();
-    //     Context.Categories.Remove(category);
-    //     Context.SaveChanges();
-    //     return Results.Ok();
-    // }
-
 
 }
