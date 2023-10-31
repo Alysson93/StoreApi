@@ -1,7 +1,5 @@
-using Dapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
-using Npgsql;
 using System.Security.Claims;
 
 namespace StoreApi.Controllers;
@@ -13,30 +11,19 @@ public class EmployeeController : ControllerBase
 
     private readonly ILogger<EmployeeController> _logger;
     private readonly UserManager<IdentityUser> userManager;
-    private readonly IConfiguration configuration;
+    private readonly QueryAllUsersWithClaimName query;
 
-
-    public EmployeeController(ILogger<EmployeeController> logger, UserManager<IdentityUser> userManager, IConfiguration configuration)
+    public EmployeeController(ILogger<EmployeeController> logger, UserManager<IdentityUser> userManager, QueryAllUsersWithClaimName query)
     {
         _logger = logger;
         this.userManager = userManager;
-        this.configuration = configuration;
+        this.query = query;
     }
 
     [HttpGet]
-    public IResult Get([FromQuery]int page, [FromQuery]int rows)
+    public IResult Get([FromQuery]int? page, [FromQuery]int? rows)
     {
-        var db = new NpgsqlConnection(this.configuration["ConnectionString"]);
-        var query =  @"SELECT ""Email"", ""ClaimValue"" as Name
-            FROM public.""AspNetUsers"" u 
-            INNER JOIN public.""AspNetUserClaims"" c
-            ON u.""Id"" = c.""UserId"" AND ""ClaimType"" = 'Name'
-            ORDER BY ""name""
-            OFFSET @page ROWS
-            FETCH NEXT @rows ROWS ONLY;";
-        var employees = db.Query<EmployeeResponse>( 
-           query, new {page = (page-1)*rows, rows}
-        );
+        var employees = query.Execute(page, rows);
         return Results.Ok(employees);
     }
 

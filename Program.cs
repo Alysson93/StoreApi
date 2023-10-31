@@ -10,6 +10,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 );
 builder.Services.AddIdentity<IdentityUser, IdentityRole>(/*aqui é possível configurar a senha*/)
 .AddEntityFrameworkStores<AppDbContext>();
+builder.Services.AddScoped<QueryAllUsersWithClaimName>();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
